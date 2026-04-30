@@ -1,26 +1,54 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateContatoDto } from './dto/create-contato.dto';
 import { UpdateContatoDto } from './dto/update-contato.dto';
 
 @Injectable()
 export class ContatosService {
-  create(createContatoDto: CreateContatoDto) {
-    return 'This action adds a new contato';
+  constructor(private prisma: PrismaService) {}
+
+  async create(dto: CreateContatoDto, usuarioId: string) {
+    const jaExiste = await this.prisma.contato.findFirst({
+      where: { email: dto.email },
+    });
+
+    if (jaExiste) throw new ConflictException('Email já cadastrado');
+
+    return this.prisma.contato.create({
+      data: { ...dto, usuarioId },
+    });
   }
 
-  findAll() {
-    return `This action returns all contatos`;
+  async findAll(usuarioId: string) {
+    return this.prisma.contato.findMany({
+      where: { usuarioId },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} contato`;
+  async findOne(id: string) {
+    const contato = await this.prisma.contato.findUnique({
+      where: { id },
+    });
+
+    if (!contato) throw new NotFoundException(`Contato ${id} não encontrado`);
+
+    return contato;
   }
 
-  update(id: number, updateContatoDto: UpdateContatoDto) {
-    return `This action updates a #${id} contato`;
+  async update(id: string, dto: UpdateContatoDto) {
+    await this.findOne(id);
+
+    return this.prisma.contato.update({
+      where: { id },
+      data: dto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} contato`;
+  async remove(id: string) {
+    await this.findOne(id);
+
+    await this.prisma.contato.delete({ where: { id } });
+
+    return { mensagem: 'Contato removido com sucesso' };
   }
 }
