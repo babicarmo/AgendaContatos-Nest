@@ -1,54 +1,67 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ContatosRepository } from './contatos.repository';
+import { UsersService } from '../users/users.service';
 import { CreateContatoDto } from './dto/create-contato.dto';
 import { UpdateContatoDto } from './dto/update-contato.dto';
+import { Contact } from './interfaces/contato.interface';
 
 @Injectable()
 export class ContatosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly contatosRepository: ContatosRepository,
+    private readonly usersService: UsersService,
+  ) {}
 
-  async create(dto: CreateContatoDto, usuarioId: string) {
-    const jaExiste = await this.prisma.contato.findFirst({
-      where: { email: dto.email },
-    });
+  async create(createContatoDto: CreateContatoDto, userEmail: string): Promise<Contact> {
+    const { name, email, phone } = createContatoDto;
 
-    if (jaExiste) throw new ConflictException('Email já cadastrado');
+    const user = await this.usersService.findByEmail(userEmail);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-    return this.prisma.contato.create({
-      data: { ...dto, usuarioId },
-    });
-  }
+    const contactExists = await this.contatosRepository.findByEmailOrPhone(email, phone);
+    if (contactExists) {
+      throw new BadRequestException('Contact with this email or phone already exists');
+    }
 
-  async findAll(usuarioId: string) {
-    return this.prisma.contato.findMany({
-      where: { usuarioId },
-    });
-  }
-
-  async findOne(id: string) {
-    const contato = await this.prisma.contato.findUnique({
-      where: { id },
-    });
-
-    if (!contato) throw new NotFoundException(`Contato ${id} não encontrado`);
-
-    return contato;
-  }
-
-  async update(id: string, dto: UpdateContatoDto) {
-    await this.findOne(id);
-
-    return this.prisma.contato.update({
-      where: { id },
-      data: dto,
+    return this.contatosRepository.create({
+      name,
+      email,
+      phone,
+      userId: user.id,
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async findAll(userEmail: string): Promise<Contact[]> {
+    const user = await this.usersService.findByEmail(userEmail);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-    await this.prisma.contato.delete({ where: { id } });
+    return this.contatosRepository.findAllContacts(user.id);
+  }
 
-    return { mensagem: 'Contato removido com sucesso' };
+  async update(id: string, updateContatoDto: UpdateContatoDto): Promise<Contact> {
+    const { name, email, phone } = updateContatoDto;
+
+    return this.contatosRepository.updateContact({
+      id,
+      name: name ?? '',
+      email: email ?? '',
+      phone: phone ?? '',
+    });
+  }
+
+  async remove(id: string): Promise<boolean> {
+    const result = await this.contatosRepository.delete(id);
+    if (!result) {
+      throw new BadRequestException('Failed to delete contact');
+    }
+    return true;
   }
 }

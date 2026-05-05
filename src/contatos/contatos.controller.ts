@@ -1,32 +1,43 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { ContatosService } from './contatos.service';
 import { CreateContatoDto } from './dto/create-contato.dto';
 import { UpdateContatoDto } from './dto/update-contato.dto';
-import { AuthGuard } from 'src/auth/guard';
+import { AuthGuard } from './guards/auth.guard';
 
-@Controller('contatos')
+@Controller('contacts')
 @UseGuards(AuthGuard)
 export class ContatosController {
   constructor(private readonly contatosService: ContatosService) {}
 
   @Post()
-  create(@Body() dto: CreateContatoDto, @Request() req) {
-    return this.contatosService.create(dto, req.user.id);
+  create(
+    @Body() createContatoDto: CreateContatoDto,
+    @Headers('email') userEmail: string,
+  ) {
+    return this.contatosService.create(createContatoDto, userEmail);
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.contatosService.findAll(req.user.id);
+  findAll(@Headers('email') userEmail: string) {
+    return this.contatosService.findAll(userEmail);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.contatosService.findOne(id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateContatoDto) {
-    return this.contatosService.update(id, dto);
+  @Put(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateContatoDto: UpdateContatoDto,
+  ) {
+    return this.contatosService.update(id, updateContatoDto);
   }
 
   @Delete(':id')
