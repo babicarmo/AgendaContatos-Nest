@@ -32,6 +32,9 @@ export class ContatosRepository implements ContactRepository {
   async findAllContacts(userId: string): Promise<Contact[]> {
     return this.prisma.contacts.findMany({
       where: { userId },
+      orderBy: { //acrescentei um método de ordenação alfabética, ou seja, em ordem alfabética.
+        name:"asc",
+      }
     });
   }
 
@@ -45,5 +48,16 @@ export class ContatosRepository implements ContactRepository {
   async delete(id: string): Promise<boolean> {
     const result = await this.prisma.contacts.delete({ where: { id } });
     return !!result;
+  }
+// filtra os contatos do usuário por nome 
+  async findByName(userId: string, name: string): Promise<Contact[]> {
+  return this.prisma.contacts.findMany({
+    where: {
+      userId,
+      name: {
+        contains: name,
+      },
+    },
+  });
   }
 }

@@ -12,7 +12,7 @@ export class UsersService {
 
     const userExists = await this.usersRepository.findByEmail(email);
     if (userExists) {
-      throw new BadRequestException('User already exists');
+      throw new BadRequestException('O usuário já existe');
     }
 
     return this.usersRepository.create({ name, email });

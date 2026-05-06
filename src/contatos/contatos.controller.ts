@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   UseGuards,
+  Query // adicionei o query no import
 } from '@nestjs/common';
 import { ContatosService } from './contatos.service';
 import { CreateContatoDto } from './dto/create-contato.dto';
@@ -31,6 +32,14 @@ export class ContatosController {
   findAll(@Headers('email') userEmail: string) {
     return this.contatosService.findAll(userEmail);
   }
+
+  @Get('search')
+  findByName( //adicionei findbyname para buscar por nome 
+    @Query('name') name: string,
+    @Headers('email') userEmail: string,
+  ) {
+    return this.contatosService.findByName(userEmail, name);
+}
 
   @Put(':id')
   update(

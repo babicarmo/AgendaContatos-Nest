@@ -21,12 +21,12 @@ export class ContatosService {
 
     const user = await this.usersService.findByEmail(userEmail);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     const contactExists = await this.contatosRepository.findByEmailOrPhone(email, phone);
     if (contactExists) {
-      throw new BadRequestException('Contact with this email or phone already exists');
+      throw new BadRequestException('Já existe um contato com este e-mail ou telefone.');
     }
 
     return this.contatosRepository.create({
@@ -40,10 +40,18 @@ export class ContatosService {
   async findAll(userEmail: string): Promise<Contact[]> {
     const user = await this.usersService.findByEmail(userEmail);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     return this.contatosRepository.findAllContacts(user.id);
+  }
+  async findByName(userEmail: string, name: string): Promise<Contact[]> {
+    const user = await this.usersService.findByEmail(userEmail);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.contatosRepository.findByName(user.id, name);
   }
 
   async update(id: string, updateContatoDto: UpdateContatoDto): Promise<Contact> {
@@ -60,7 +68,7 @@ export class ContatosService {
   async remove(id: string): Promise<boolean> {
     const result = await this.contatosRepository.delete(id);
     if (!result) {
-      throw new BadRequestException('Failed to delete contact');
+      throw new BadRequestException('Falha ao excluir o contato');
     }
     return true;
   }
