@@ -6,9 +6,13 @@ import {
 } from '@nestjs/common';
 import { UsersService } from '../../users/users.service';
 
+// Criação do Guard de autenticação
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(private readonly usersService: UsersService) {}
+  
+ // Método obrigatório do CanActivate
+  // Ele decide se a requisição pode continuar ou não
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
